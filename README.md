@@ -32,8 +32,8 @@ Siga estes passos para configurar o ambiente de desenvolvimento.
 **1. Clone o Repositório**
 
 ```bash
-git clone <URL_DO_SEU_REPOSITORIO>
-cd <NOME_DO_REPOSITORIO>
+git clone <https://github.com/Gabriel-Rosatto-Dantas/AUTOMACAO-SAP-BACKGROUND>
+cd <AUTOMACAO-SAP-BACKGROUND>
 ```
 
 **2. Crie um Ambiente Virtual (Recomendado)**
