@@ -85,24 +85,13 @@ application = SapGuiAuto.GetScriptingEngine
 print("Conectando ao S/4HANA PS4...")
 # Abre a conexão com o sistema SAP especificado
 connection = application.OpenConnection('S/4HANA PS4', True)
-time.sleep(3) # Espera a conexão ser estabelecida
-session = connection.Children(0) # Obtém a primeira sessão da conexão
-session.findById('wnd[0]').maximize() # Corrigido: .maximize() é um método
+time.sleep(3) 
+session = connection.Children(0) 
+session.findById('wnd[0]').maximize() 
 print("Conexão estabelecida com sucesso.")
 
-# O bloco WScript foi comentado, pois pode estar causando o erro "Cadeia de caracteres de classe inválida".
-# Se a manipulação de eventos SAP GUI for necessária, verifique a configuração do WScript em seu sistema.
-# try:
-#     # Conecta objetos para manipulação de eventos (se necessário)
-#     WScript = win32com.client.Dispatch("WScript")
-#     WScript.ConnectObject(session, "on")
-#     WScript.ConnectObject(application, "on") # Usar 'application' em vez de 'App'
-# except Exception as e:
-#     print(f"Erro ao conectar objetos WScript: {e}")
+session.FindById("wnd[0]").Maximize() 
 
-session.FindById("wnd[0]").Maximize() # Corrigido: .Maximize() é um método
-
-# Obtém usuário e senha das variáveis de ambiente (agora lidas do .env)
 sap_usuario = os.getenv('SAP_USER')
 sap_senha = os.getenv('SAP_PASSWORD')
 
@@ -127,7 +116,7 @@ print("Acessando a transação ZPMMT_287...")
 session.findById("wnd[0]").maximize()
 session.findById("wnd[0]/tbar[0]/okcd").text = "ZPMMT_287"
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]/usr/ctxtS_DATA-LOW").text = "01.01.2024"
+session.findById("wnd[0]/usr/ctxtS_DATA-LOW").text = "01.04.2026"
 session.findById("wnd[0]/usr/ctxtS_DATA-HIGH").text = data_convertida
 session.findById("wnd[0]/usr/ctxtS_DATA-HIGH").setFocus()
 session.findById("wnd[0]/usr/ctxtS_DATA-HIGH").caretPosition = 10
@@ -146,14 +135,22 @@ session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 16
 session.findById("wnd[2]/tbar[0]/btn[0]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados para Excel...")
+
+
+
 session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
 session.findById("wnd[0]/shellcont/shell").selectContextMenuItem("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "ZPMMT"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 5
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "ZPMMT.xlsx"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 10
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
 session.findById("wnd[1]/tbar[0]/btn[11]").press()
+
 print("Dados exportados para ZPMMT.xlsx")
+
+
 
 print("Processando arquivo ZPMMT.xlsx...")
 Requisicao = pd.read_excel(r'C:\Users\3976339\Desktop\ONTIME\ZPMMT.xlsx')
@@ -166,68 +163,73 @@ Requisicao_zp.to_csv(Nome_Arquivo_zpmmt, index=False)
 print("Arquivo ZPMMT_REQ.txt criado com sucesso.")
 
 print("Acessando a transação SE16N para tabela EBAN...")
-session.findById("wnd[0]").maximize()
+
+print("Lendo requisições e copiando para a área de transferência...")
+# O Pandas lê o arquivo e já ignora a primeira linha como título
+df_reqs = pd.read_csv(r"C:\Users\3976339\Desktop\ONTIME\ZPMMT_REQ.txt")
+
+# Pega apenas a coluna desejada e dá um "Ctrl+C" nela (sem copiar o cabeçalho e o índice)
+df_reqs['Requisição de Compras'].to_clipboard(index=False, header=False)
+
+print("Processando tabela EBAN...")
 session.findById("wnd[0]/tbar[0]/okcd").text = "/NSE16N"
 session.findById("wnd[0]").sendVKey(0)
 session.findById("wnd[0]/usr/ctxtGD-TAB").text = "EBAN"
-session.findById("wnd[0]/usr/ctxtGD-TAB").setFocus()
-session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 4
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").press()
-session.findById("wnd[1]/tbar[0]/btn[21]").press()
-session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = r"ZPMMT_REQ.txt"
-session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 13
-session.findById("wnd[2]/tbar[0]/btn[0]").press() 
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").press()
+session.findById("wnd[1]/tbar[0]/btn[24]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
 session.findById("wnd[0]/usr/ctxtGD-VARIANT").text = "/LOG_ONTIME"
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
-session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
+session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = (0)
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela EBAN...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
+
+# Extraindo dados EBAN
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "EBAN"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "EBAN.xlsx"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 9
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
-session.findById("wnd[0]/tbar[0]/btn[3]").press()
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()    
 print("Dados da tabela EBAN exportados para EBAN.xlsx")
 
 print("Processando tabela EKET...")
-session.findById("wnd[0]/usr/ctxtGD-TAB").text = "EKET"
-session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 4
+session.findById("wnd[0]/tbar[0]/okcd").text = "/NSE16N"
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]").sendVKey(71)
+session.findById("wnd[0]/usr/ctxtGD-TAB").text = "EKET"
+session.findById("wnd[0]").sendVKey (0)
+session.findById("wnd[0]").sendVKey (71)
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "BANFN"
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
-session.findById("wnd[1]").sendVKey(0)
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
-session.findById("wnd[1]/tbar[0]/btn[21]").press()
-session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = r"ZPMMT_REQ.txt"
-session.findById("wnd[2]/tbar[0]/btn[0]").press()
+session.findById("wnd[1]/tbar[0]/btn[0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
+session.findById("wnd[1]/tbar[0]/btn[24]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
-session.findById("wnd[0]/usr/ctxtGD-VARIANT").setFocus()
-session.findById("wnd[0]/usr/ctxtGD-VARIANT").caretPosition = 0
-session.findById("wnd[0]").sendVKey(0)
 session.findById("wnd[0]/usr/ctxtGD-VARIANT").text = "/LOG_ONTIME"
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
-session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
+session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela EKET...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
+
+# Extraindo dados EKET
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "EKET"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "EKET.XLSX"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 9
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
-session.findById("wnd[0]/tbar[0]/btn[3]").press()
-print("Dados da tabela EKET exportados para EKET.XLSX")
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()    
+print("Dados da tabela EBAN exportados para EKET.xlsx")
+
+
 
 print("Lendo e consolidando dados...")
 base_eket = pd.read_excel(r'C:\Users\3976339\Desktop\ONTIME\EKET.xlsx')
@@ -244,16 +246,15 @@ print("Arquivo PEDIDOS_CONSOLIDADO.txt criado com sucesso.")
 
 print("Processando tabela LIPS...")
 session.findById("wnd[0]").maximize()
+session.findById("wnd[0]").sendVKey(3)
 session.findById("wnd[0]/usr/ctxtGD-TAB").text = "LIPS"
-session.findById("wnd[0]/usr/ctxtGD-TAB").setFocus()
-session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 4
 session.findById("wnd[0]").sendVKey(0)
 session.findById("wnd[0]").sendVKey(71)
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "VGBEL"
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
 session.findById("wnd[1]/tbar[0]/btn[0]").press()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
 session.findById("wnd[1]/tbar[0]/btn[21]").press()
 session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
 session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = "PEDIDOS_CONSOLIDADO.txt"
@@ -265,17 +266,19 @@ session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela LIPS...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
+# Extraindo dados LIPS
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "LIPS"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "LIPS.XLSX"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 9
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
-session.findById("wnd[0]/tbar[0]/btn[3]").press()
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()    
+
 print("Dados da tabela LIPS exportados para LIPS.XLSX")
 
-print("Processando arquivo LIPS.xlsx...")
 remessa = pd.read_excel(r'C:\Users\3976339\Desktop\ONTIME\LIPS.xlsx')
 remessa_zp = remessa.loc[:,['Remessa']]
 remessa_zp.to_csv(r"C:\Users\3976339\Desktop\ONTIME\REMESSA.txt", index=False, header=False)
@@ -283,24 +286,33 @@ print("Arquivo REMESSA.txt criado com sucesso.")
 
 print("Processando tabela VBFA...")
 session.findById("wnd[0]").maximize()
+session.findById("wnd[0]").sendVKey(3)
 session.findById("wnd[0]/usr/ctxtGD-TAB").text = "VBFA"
 session.findById("wnd[0]/usr/ctxtGD-TAB").setFocus()
 session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 4
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,2]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,2]").press()
+session.findById("wnd[0]").sendVKey(71)
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "VBELV"
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
+session.findById("wnd[1]/tbar[0]/btn[0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
 session.findById("wnd[1]/tbar[0]/btn[21]").press()
 session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
 session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = "REMESSA.txt"
 session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 11
 session.findById("wnd[2]/tbar[0]/btn[0]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
+session.findById("wnd[0]/usr/ctxtGD-VARIANT").text = "/LOG_ONTIME"
+session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
+session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus
+session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]").sendVKey(71)
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "BWART"
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
 session.findById("wnd[1]").sendVKey(0)
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
 session.findById("wnd[1]/usr/tblSAPLSE16NMULTI_TC/ctxtGS_MULTI_SELECT-LOW[1,0]").text = "101"
 session.findById("wnd[1]/usr/tblSAPLSE16NMULTI_TC/ctxtGS_MULTI_SELECT-LOW[1,1]").text = "862"
 session.findById("wnd[1]/usr/tblSAPLSE16NMULTI_TC/ctxtGS_MULTI_SELECT-LOW[1,2]").text = "861"
@@ -312,17 +324,21 @@ session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela VBFA...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
-session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "VBFA.XLSX"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 9
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
-print("Dados da tabela VBFA exportados para VBFA.XLSX")
 
-print("Processando arquivo VBFA.xlsx...")
+# Extraindo dados VBFA
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "VBFA"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
+session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()   
+print("Dados da tabela VBFA exportados para VBFA.xlsx")
+
 base_vbfa = pd.read_excel(r'C:\Users\3976339\Desktop\ONTIME\VBFA.xlsx')
+
 # Corrigido: O filtro deve ser aplicado diretamente em base_vbfa
 base_filtrada = base_vbfa[base_vbfa['Tipo de movimento'].isin([101, 862])]
 base_filtrada['Concatenado'] = base_filtrada['Doc.subsequente'].astype(str) + base_filtrada['Ano doc.material'].astype(str)
@@ -331,22 +347,19 @@ print("Arquivo VBFA_CONSOLIDADO.txt criado com sucesso.")
 
 print("Processando tabela J_1BNFLIN...")
 session.findById("wnd[0]").maximize()
-session.findById("wnd[0]/usr/txtGD-TAB").setFocus()
-session.findById("wnd[0]/usr/txtGD-TAB").caretPosition = 0
-session.findById("wnd[0]/tbar[0]/btn[3]").press()
+session.findById("wnd[0]").sendVKey(3)
 session.findById("wnd[0]/usr/ctxtGD-TAB").text = "J_1BNFLIN"
-session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 9
 session.findById("wnd[0]").sendVKey(0)
 session.findById("wnd[0]").sendVKey(71)
 session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "REFKEY"
-session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 6
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
 session.findById("wnd[1]/tbar[0]/btn[0]").press()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
 session.findById("wnd[1]/tbar[0]/btn[21]").press()
 session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
 session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = "VBFA_CONSOLIDADO.txt"
-session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 20
+session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 23
 session.findById("wnd[2]/tbar[0]/btn[0]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
 session.findById("wnd[0]/usr/ctxtGD-VARIANT").text = "/LOG_ONTIME"
@@ -354,16 +367,20 @@ session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela J_1BNFLIN...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
+# Extraindo dados J_1BNFLIN
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "J_1BNFLIN"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "J_1BNFLIN.xlsx"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 14
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
-print("Dados da tabela J_1BNFLIN exportados para J_1BNFLIN.xlsx")
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()    
 
-print("Processando arquivo J_1BNFLIN.xlsx...")
+print("Dados da tabela J_1BNFLIN exportados para J_1BNFLIN.XLSX")
+
+
 jlin = pd.read_excel(r'C:\Users\3976339\Desktop\ONTIME\J_1BNFLIN.xlsx')
 jlin_zp = jlin.loc[:,['Nº documento']]
 jlin_zp.to_csv(r"C:\Users\3976339\Desktop\ONTIME\JLIN.txt", index=False, header=False)
@@ -371,16 +388,19 @@ print("Arquivo JLIN.txt criado com sucesso.")
 
 print("Processando tabela J_1BNFDOC...")
 session.findById("wnd[0]").maximize()
-session.findById("wnd[0]/tbar[0]/btn[3]").press()
+session.findById("wnd[0]").sendVKey(3)
 session.findById("wnd[0]/usr/ctxtGD-TAB").text = "J_1BNFDOC"
-session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 9
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").press()
+session.findById("wnd[0]").sendVKey(71)
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "DOCNUM"
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
+session.findById("wnd[1]/tbar[0]/btn[0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
 session.findById("wnd[1]/tbar[0]/btn[21]").press()
 session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
 session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = "JLIN.txt"
-session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 8
+session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 23
 session.findById("wnd[2]/tbar[0]/btn[0]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
 session.findById("wnd[0]/usr/ctxtGD-VARIANT").text = "/LOG_ONTIME"
@@ -388,14 +408,19 @@ session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela J_1BNFDOC...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
+# Extraindo dados J_1BNFDOC
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "J_1BNFDOC"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "J_1BNFDOC.XLSX"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 14
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()    
+
 print("Dados da tabela J_1BNFDOC exportados para J_1BNFDOC.XLSX")
+
 
 print("Processando arquivo ZPMMT.xlsx para tabela MARA...")
 mara = pd.read_excel(r'C:\Users\3976339\Desktop\ONTIME\ZPMMT.xlsx')
@@ -405,16 +430,19 @@ print("Arquivo MARA.txt criado com sucesso.")
 
 print("Processando tabela MARA...")
 session.findById("wnd[0]").maximize()
-session.findById("wnd[0]/tbar[0]/btn[3]").press()
+session.findById("wnd[0]").sendVKey(3)
 session.findById("wnd[0]/usr/ctxtGD-TAB").text = "MARA"
-session.findById("wnd[0]/usr/ctxtGD-TAB").caretPosition = 4
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").setFocus()
-session.findById("wnd[0]/usr/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,1]").press()
+session.findById("wnd[0]").sendVKey(71)
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").text = "MATNR"
+session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").caretPosition = 5
+session.findById("wnd[1]/tbar[0]/btn[0]").press()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").setFocus()
+session.findById("wnd[0]/usr/subTAB_SUB:SAPLSE16N:0121/tblSAPLSE16NSELFIELDS_TC/btnPUSH[4,0]").press()
 session.findById("wnd[1]/tbar[0]/btn[21]").press()
 session.findById("wnd[2]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
 session.findById("wnd[2]/usr/ctxtDY_FILENAME").text = "MARA.txt"
-session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 8
+session.findById("wnd[2]/usr/ctxtDY_FILENAME").caretPosition = 23
 session.findById("wnd[2]/tbar[0]/btn[0]").press()
 session.findById("wnd[1]/tbar[0]/btn[8]").press()
 session.findById("wnd[0]/usr/ctxtGD-VARIANT").text = "/LOG_ONTIME"
@@ -422,13 +450,17 @@ session.findById("wnd[0]/usr/txtGD-MAX_LINES").text = ""
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").setFocus()
 session.findById("wnd[0]/usr/txtGD-MAX_LINES").caretPosition = 0
 session.findById("wnd[0]/tbar[1]/btn[8]").press()
-print("Exportando dados da tabela MARA...")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").pressToolbarContextButton("&MB_EXPORT")
-session.findById("wnd[0]/usr/cntlRESULT_LIST/shellcont/shell").selectContextMenuItem("&XXL")
+# Extraindo dados LIPS
+session.findById("wnd[0]/shellcont/shell").pressToolbarContextButton ("&MB_EXPORT")
+session.findById("wnd[0]/shellcont/shell").selectContextMenuItem ("&XXL")
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").text = "MARA"
+session.findById("wnd[1]/usr/ssubSUB_CONFIGURATION:SAPLSALV_GUI_CUL_EXPORT_AS:0512/txtGS_EXPORT-FILE_NAME").caretPosition = 4
+session.findById("wnd[1]/tbar[0]/btn[20]").press()
 session.findById("wnd[1]/usr/ctxtDY_PATH").text = r"C:\Users\3976339\Desktop\ONTIME"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "MARA.XLSX"
-session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 9
-session.findById("wnd[1]/tbar[0]/btn[11]").press()
+session.findById("wnd[1]/usr/ctxtDY_PATH").setFocus()
+session.findById("wnd[1]/usr/ctxtDY_PATH").caretPosition = 31
+session.findById("wnd[1]/tbar[0]/btn[11]").press()    
+
 print("Dados da tabela MARA exportados para MARA.XLSX")
 
 print("Extrações SAP Conluídas!")
