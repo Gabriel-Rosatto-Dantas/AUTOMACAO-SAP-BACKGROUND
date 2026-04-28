@@ -116,7 +116,7 @@ print("Acessando a transação ZPMMT_287...")
 session.findById("wnd[0]").maximize()
 session.findById("wnd[0]/tbar[0]/okcd").text = "ZPMMT_287"
 session.findById("wnd[0]").sendVKey(0)
-session.findById("wnd[0]/usr/ctxtS_DATA-LOW").text = "01.04.2026"
+session.findById("wnd[0]/usr/ctxtS_DATA-LOW").text = "01.01.2026"
 session.findById("wnd[0]/usr/ctxtS_DATA-HIGH").text = data_convertida
 session.findById("wnd[0]/usr/ctxtS_DATA-HIGH").setFocus()
 session.findById("wnd[0]/usr/ctxtS_DATA-HIGH").caretPosition = 10
